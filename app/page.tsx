@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { NewsFeed } from "@/components/news-feed";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
   return (
