@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAnonClient } from '@/lib/supabase/server'
-import { analyzeTrends } from '@/lib/claude/client'
+import { countTrends } from '@/lib/summarize/extractive'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -31,8 +31,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const titles = articles.map((a) => a.title)
-  const trends = await analyzeTrends(titles)
+  const trends = countTrends(articles)
 
-  return NextResponse.json(trends)
+  return NextResponse.json({ ...trends, analyzed_at: new Date().toISOString() })
 }

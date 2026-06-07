@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, createAnonClient } from '@/lib/supabase/server'
-import { summarizeArticle } from '@/lib/claude/client'
+import { extractSummary, extractKeyPoints, guessSentiment } from '@/lib/summarize/extractive'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
@@ -32,21 +32,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Summary already exists', article_id })
   }
 
-  const result = await summarizeArticle(
-    article.title,
-    article.content || article.title
-  )
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const serverClient = createServerClient() as any
   const { data: summary, error: insertError } = await serverClient
     .from('summaries')
     .insert({
       article_id,
-      summary_text: result.summary_text,
-      key_points: result.key_points,
-      sentiment: result.sentiment,
-      model_used: 'claude-sonnet-4-6',
+      summary_text: extractSummary(article.content, article.title),
+      key_points: extractKeyPoints(article.content, article.title),
+      sentiment: guessSentiment(article.title, article.content),
+      model_used: 'extractive',
     })
     .select()
     .single()

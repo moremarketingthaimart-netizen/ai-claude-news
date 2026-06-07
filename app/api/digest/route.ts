@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, createAnonClient } from '@/lib/supabase/server'
-import { buildDigest } from '@/lib/claude/client'
+import { buildExtractiveDigest } from '@/lib/summarize/extractive'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     summary: a.summaries?.[0]?.summary_text,
   }))
 
-  const result = await buildDigest(articleList)
+  const result = buildExtractiveDigest(articleList, date)
 
   const { data: digest, error: upsertError } = await supabase
     .from('digests')
