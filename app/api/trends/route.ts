@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
   const hours = Number(searchParams.get('hours') || '24')
   const clampedHours = Math.min(Math.max(hours, 1), 168)
 
-  const supabase = createAnonClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createAnonClient() as any
   const since = new Date(Date.now() - clampedHours * 60 * 60 * 1000).toISOString()
 
   const { data: articles, error } = await supabase
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     .select('title, category')
     .gte('published_at', since)
     .order('published_at', { ascending: false })
-    .limit(100)
+    .limit(100) as { data: Array<{ title: string; category: string }> | null; error: Error | null }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

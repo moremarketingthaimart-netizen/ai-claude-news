@@ -13,21 +13,33 @@ interface Props {
 
 export default async function ArticlePage({ params }: Props) {
   const { id } = await params
-  const supabase = createAnonClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createAnonClient() as any
 
   const { data: article } = await supabase
     .from('articles')
     .select('*, summaries(*)')
     .eq('id', id)
-    .single()
+    .single() as {
+    data: {
+      id: string
+      title: string
+      url: string
+      content: string | null
+      source_name: string | null
+      category: string
+      published_at: string | null
+      summaries: Array<{
+        summary_text: string
+        key_points: string[]
+        sentiment: 'positive' | 'neutral' | 'negative' | null
+      }>
+    } | null
+  }
 
   if (!article) notFound()
 
-  const summary = (article.summaries as Array<{
-    summary_text: string
-    key_points: string[]
-    sentiment: 'positive' | 'neutral' | 'negative' | null
-  }>)?.[0]
+  const summary = article.summaries?.[0]
 
   const timeAgo = article.published_at
     ? formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: th })

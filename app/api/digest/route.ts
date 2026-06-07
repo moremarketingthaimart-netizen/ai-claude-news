@@ -29,8 +29,10 @@ export async function POST(request: NextRequest) {
   const date = body.date || new Date().toISOString().split('T')[0]
   const force = body.force === true
 
-  const supabase = createServerClient()
-  const anonClient = createAnonClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createServerClient() as any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const anonClient = createAnonClient() as any
 
   if (!force) {
     const { data: existing } = await anonClient
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
     .gte('published_at', startOfDay)
     .lte('published_at', endOfDay)
     .order('published_at', { ascending: false })
-    .limit(20)
+    .limit(20) as { data: Array<{ id: string; title: string; url: string; summaries: Array<{ summary_text: string }> }> | null }
 
   if (!articles || articles.length < 3) {
     return NextResponse.json(
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
   const articleList = articles.map((a) => ({
     title: a.title,
     url: a.url,
-    summary: (a.summaries as Array<{ summary_text: string }>)?.[0]?.summary_text,
+    summary: a.summaries?.[0]?.summary_text,
   }))
 
   const result = await buildDigest(articleList)

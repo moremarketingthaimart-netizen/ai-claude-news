@@ -10,18 +10,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'article_id is required' }, { status: 400 })
   }
 
-  const anonClient = createAnonClient()
-  const { data: article, error: fetchError } = await anonClient
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = createAnonClient() as any
+  const { data: article, error: fetchError } = await db
     .from('articles')
     .select('id, title, content, url')
     .eq('id', article_id)
-    .single()
+    .single() as { data: { id: string; title: string; content: string | null; url: string } | null; error: Error | null }
 
   if (fetchError || !article) {
     return NextResponse.json({ error: 'Article not found' }, { status: 404 })
   }
 
-  const { data: existing } = await anonClient
+  const { data: existing } = await db
     .from('summaries')
     .select('id')
     .eq('article_id', article_id)
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest) {
     article.content || article.title
   )
 
-  const serverClient = createServerClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const serverClient = createServerClient() as any
   const { data: summary, error: insertError } = await serverClient
     .from('summaries')
     .insert({

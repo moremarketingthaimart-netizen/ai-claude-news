@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAnonClient, createServerClient } from '@/lib/supabase/server'
 import { fetchAllSources } from '@/lib/news/fetcher'
 import { NEWS_SOURCES } from '@/lib/news/sources'
+import type { ArticleWithSummary } from '@/types'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ articles: data, count: data?.length || 0 })
+  return NextResponse.json({ articles: data as unknown as ArticleWithSummary[], count: data?.length || 0 })
 }
 
 export async function POST() {
@@ -37,7 +38,8 @@ export async function POST() {
     return NextResponse.json({ message: 'No articles fetched', errors }, { status: 200 })
   }
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('articles')
     .upsert(articles, { onConflict: 'url', ignoreDuplicates: true })
 
