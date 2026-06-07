@@ -1,7 +1,7 @@
 import { createAnonClient } from '@/lib/supabase/server'
 import { DigestView } from '@/components/digest-view'
 
-export const revalidate = 600
+export const dynamic = 'force-dynamic'
 
 export default async function DigestPage() {
   const supabase = createAnonClient()
