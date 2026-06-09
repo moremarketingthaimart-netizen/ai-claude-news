@@ -31,6 +31,11 @@ function getInitials(source: string | null, category: string): string {
   return initials.length > 1 ? initials : text.slice(0, 2).toUpperCase()
 }
 
+const thumbOpacities = ['opacity-35', 'opacity-40', 'opacity-45', 'opacity-40'] as const
+function getThumbOpacity(title: string): string {
+  return thumbOpacities[(title.charCodeAt(0) || 0) % thumbOpacities.length]
+}
+
 export function NewsCard({ article, featured = false }: NewsCardProps) {
   const summary = article.summaries?.[0]
   const timeAgo = article.published_at
@@ -38,13 +43,14 @@ export function NewsCard({ article, featured = false }: NewsCardProps) {
     : null
   const thumbStyle = getThumbStyle(article.category)
   const initials = getInitials(article.source_name, article.category)
+  const thumbOpacity = getThumbOpacity(article.title)
   const sentiment = summary?.sentiment
 
   if (featured) {
     return (
       <div className="flex gap-6 border-b border-border/40 pb-8 mb-8">
         {/* Thumbnail placeholder */}
-        <div className={`shrink-0 w-48 h-32 rounded flex items-center justify-center text-sm font-black tracking-widest opacity-50 ${thumbStyle}`}>
+        <div className={`shrink-0 w-48 h-32 rounded flex items-center justify-center text-sm font-black tracking-widest ${thumbOpacity} ${thumbStyle}`}>
           {initials}
         </div>
 
@@ -82,7 +88,7 @@ export function NewsCard({ article, featured = false }: NewsCardProps) {
   return (
     <div className="flex items-start gap-4 border-b border-border/30 py-4 last:border-0">
       {/* Thumbnail placeholder — small */}
-      <div className={`shrink-0 w-14 h-14 rounded flex items-center justify-center text-xs font-black tracking-wider opacity-40 ${thumbStyle}`}>
+      <div className={`shrink-0 w-14 h-14 rounded flex items-center justify-center text-xs font-black tracking-wider ${thumbOpacity} ${thumbStyle}`}>
         {initials}
       </div>
 

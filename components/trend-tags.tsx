@@ -61,13 +61,11 @@ export function TrendTags() {
     <div className="space-y-12">
       {/* Trending Topics */}
       <div>
-        <p className="text-xs font-black tracking-widest uppercase text-muted-foreground mb-6">
+        <p className="text-xs font-black tracking-widest uppercase text-muted-foreground mb-1">
           Trending Topics
-          {trends.fallbackUsed && (
-            <span className="ml-2 text-muted-foreground/40 normal-case tracking-normal font-normal">
-              (all-time)
-            </span>
-          )}
+        </p>
+        <p className="text-xs text-muted-foreground/40 mb-6">
+          {trends.fallbackUsed ? 'ข่าวทั้งหมด' : '24 ชั่วโมงล่าสุด'}
         </p>
         <div>
           {trends.trending_topics.map((topic, i) => {
@@ -94,13 +92,13 @@ export function TrendTags() {
                     />
                   </div>
                 </div>
-                <span className={`text-xs shrink-0 font-medium ${
-                  topic.sentiment === 'positive' ? 'text-emerald-400' :
-                  topic.sentiment === 'negative' ? 'text-red-400' :
-                  'text-muted-foreground/40'
-                }`}>
-                  {topic.sentiment}
-                </span>
+                {topic.sentiment !== 'neutral' && (
+                  <span className={`text-xs shrink-0 font-medium ${
+                    topic.sentiment === 'positive' ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    {topic.sentiment}
+                  </span>
+                )}
               </div>
             )
           })}

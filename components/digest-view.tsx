@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { Digest } from '@/types'
 
@@ -10,63 +10,48 @@ interface DigestViewProps {
   today: string
 }
 
-function renderDigestContent(content: string): ReactNode[] {
-  const elements: ReactNode[] = []
-  let key = 0
+interface DigestArticleBlock {
+  title: string
+  body: string
+  url: string
+}
 
-  for (const line of content.split('\n')) {
+function parseDigestArticles(content: string): {
+  intro: string
+  articles: DigestArticleBlock[]
+  footer: string
+} {
+  const lines = content.split('\n')
+  let intro = ''
+  let footer = ''
+  const articles: DigestArticleBlock[] = []
+  let current: DigestArticleBlock | null = null
+
+  for (const line of lines) {
     const t = line.trim()
+    if (!t || t === '---' || t.startsWith('# ') || t.startsWith('## ')) continue
 
-    if (!t) {
-      elements.push(<div key={key++} className="h-1" />)
-    } else if (t.startsWith('# ')) {
-      // Skip — title shown in page header
-    } else if (t === '---') {
-      elements.push(<hr key={key++} className="border-border/30 my-5" />)
-    } else if (t.startsWith('## ')) {
-      elements.push(
-        <p key={key++} className="text-xs font-black tracking-widest uppercase text-muted-foreground mt-6 mb-3">
-          {t.replace(/^## /, '')}
-        </p>
-      )
-    } else if (t.startsWith('### ')) {
-      elements.push(
-        <h3 key={key++} className="text-sm font-bold tracking-tight mt-5 mb-1.5">
-          {t.replace(/^### /, '')}
-        </h3>
-      )
-    } else if (t.startsWith('🔗 ')) {
-      const match = t.match(/🔗 \[(.+?)\]\((.+?)\)/)
-      if (match) {
-        elements.push(
-          <a
-            key={key++}
-            href={match[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors mb-3"
-          >
-            {match[1]} →
-          </a>
-        )
-      }
+    if (t.startsWith('### ')) {
+      if (current) articles.push(current)
+      current = { title: t.replace(/^### \d+\.\s*/, ''), body: '', url: '' }
+    } else if (t.startsWith('🔗 ') && current) {
+      const match = t.match(/🔗 \[.+?\]\((.+?)\)/)
+      if (match) current.url = match[1]
     } else if (t.startsWith('*') && t.endsWith('*')) {
-      elements.push(
-        <p key={key++} className="text-xs text-muted-foreground/40 italic mt-4">
-          {t.replace(/^\*|\*$/g, '')}
-        </p>
-      )
+      if (current) { articles.push(current); current = null }
+      footer = t.replace(/^\*|\*$/g, '')
+    } else if (current) {
+      current.body = current.body ? `${current.body} ${t}` : t
     } else {
-      elements.push(
-        <p key={key++} className="text-sm text-foreground/80 leading-relaxed">
-          {t}
-        </p>
-      )
+      if (intro) intro += ' '
+      intro += t
     }
   }
 
-  return elements
+  if (current) articles.push(current)
+  return { intro, articles, footer }
 }
+
 
 export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
   const [loading, setLoading] = useState(false)
@@ -99,20 +84,68 @@ export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
       {/* Main content */}
       <div className="lg:col-span-3">
-        {currentDigest ? (
-          <div>
-            {/* Digest meta */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground pb-5 mb-6 border-b border-border/40">
-              <span className="font-semibold text-foreground/60">{currentDigest.digest_date}</span>
-              <span>·</span>
-              <span>{currentDigest.articles_count} บทความ</span>
+        {currentDigest ? (() => {
+          const { intro, articles, footer } = parseDigestArticles(currentDigest.content)
+          return (
+            <div>
+              {/* Digest meta */}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground pb-5 mb-6 border-b border-border/40">
+                <span className="font-semibold text-foreground/60">{currentDigest.digest_date}</span>
+                <span>·</span>
+                <span>{currentDigest.articles_count} บทความ</span>
+              </div>
+
+              {/* Intro */}
+              {intro && (
+                <p className="text-sm text-muted-foreground leading-relaxed mb-8">{intro}</p>
+              )}
+
+              {/* Article blocks */}
+              <div className="space-y-1">
+                {articles.map((item, i) => (
+                  <div
+                    key={i}
+                    className="border-l-2 border-border/25 pl-5 py-3 mb-5 hover:border-sky-500/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div className="flex items-baseline gap-2.5 min-w-0">
+                        <span className="text-xs font-mono text-muted-foreground/30 shrink-0 tabular-nums">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <h3 className="text-sm font-bold tracking-tight leading-snug">
+                          {item.title}
+                        </h3>
+                      </div>
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-muted-foreground/30 hover:text-sky-400 transition-colors text-xs mt-0.5"
+                          title="อ่านบทความต้นฉบับ"
+                        >
+                          ↗
+                        </a>
+                      )}
+                    </div>
+                    {item.body && (
+                      <p className="text-sm text-foreground/65 leading-[1.75] ml-[1.625rem]">
+                        {item.body}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              {footer && (
+                <p className="text-xs text-muted-foreground/30 italic mt-6 pt-4 border-t border-border/20">
+                  {footer}
+                </p>
+              )}
             </div>
-            {/* Digest body */}
-            <div className="space-y-0.5">
-              {renderDigestContent(currentDigest.content)}
-            </div>
-          </div>
-        ) : (
+          )
+        })() : (
           <div className="border border-border/40 rounded p-12 text-center space-y-4">
             <p className="text-xs font-black tracking-widest uppercase text-muted-foreground">
               Daily Digest
@@ -142,7 +175,7 @@ export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
         {recentDigests.length === 0 ? (
           <p className="text-xs text-muted-foreground/50">ยังไม่มีประวัติ</p>
         ) : (
-          <div className="space-y-0">
+          <div>
             {recentDigests.map((d) => (
               <div
                 key={d.id}
@@ -151,7 +184,7 @@ export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
                 <p className="text-xs font-medium truncate group-hover:text-sky-400 transition-colors">
                   {d.title.replace(/^📰 /, '')}
                 </p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground/60 mt-0.5">
+                <div className="flex items-center justify-between text-xs text-muted-foreground/50 mt-0.5">
                   <span>{d.digest_date}</span>
                   <span>{d.articles_count} บทความ</span>
                 </div>
