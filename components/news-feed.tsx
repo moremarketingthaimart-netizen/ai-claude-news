@@ -13,24 +13,27 @@ export async function NewsFeed() {
 
   if (error) {
     return (
-      <div className="text-center py-12 text-muted-foreground text-sm">
-        ไม่สามารถโหลดข่าวได้ กรุณาลองใหม่
+      <div className="border border-border/40 rounded p-10 text-center">
+        <p className="text-sm text-muted-foreground">ไม่สามารถโหลดข่าวได้ กรุณาลองใหม่</p>
       </div>
     )
   }
 
   if (!articles || articles.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground text-sm">
-        ยังไม่มีข่าว — รอการ fetch ครั้งแรก
+      <div className="border border-border/40 rounded p-12 text-center space-y-2">
+        <p className="text-sm text-muted-foreground">ยังไม่มีข่าว</p>
+        <p className="text-xs text-muted-foreground/50">
+          รอการ fetch ครั้งแรก หรือ POST /api/news
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3">
-      {(articles as ArticleWithSummary[]).map((article) => (
-        <NewsCard key={article.id} article={article} />
+    <div>
+      {(articles as ArticleWithSummary[]).map((article, idx) => (
+        <NewsCard key={article.id} article={article} featured={idx === 0} />
       ))}
     </div>
   )

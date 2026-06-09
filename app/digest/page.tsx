@@ -21,9 +21,10 @@ export default async function DigestPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">Daily Digest</h1>
-        <p className="text-muted-foreground text-sm">สรุปข่าวสำคัญประจำวันโดย Claude</p>
+      <div className="mb-10 pb-8 border-b border-border/40">
+        <p className="text-xs font-black tracking-widest uppercase text-sky-400 mb-3">Editorial</p>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Daily Digest</h1>
+        <p className="text-sm text-muted-foreground">สรุปข่าวสำคัญประจำวัน — อัปเดตทุกเช้า</p>
       </div>
       <DigestView digest={digest} recentDigests={recentDigests || []} today={today} />
     </div>
