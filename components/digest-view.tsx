@@ -15,9 +15,11 @@ interface DigestViewProps {
 export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
   const [loading, setLoading] = useState(false)
   const [currentDigest, setCurrentDigest] = useState<Digest | null>(digest)
+  const [error, setError] = useState<string | null>(null)
 
   async function generateDigest() {
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch('/api/digest', {
         method: 'POST',
@@ -25,7 +27,13 @@ export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
         body: JSON.stringify({ date: today }),
       })
       const data = await res.json()
+      if (!res.ok || data.error) {
+        setError(data.error || `Server error (${res.status})`)
+        return
+      }
       if (data.digest) setCurrentDigest(data.digest)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error')
     } finally {
       setLoading(false)
     }
@@ -59,6 +67,9 @@ export function DigestView({ digest, recentDigests, today }: DigestViewProps) {
               <Button onClick={generateDigest} disabled={loading}>
                 {loading ? 'กำลังสร้าง...' : 'สร้าง Digest วันนี้'}
               </Button>
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
             </CardContent>
           </Card>
         )}

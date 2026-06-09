@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   const startOfDay = `${date}T00:00:00.000Z`
   const endOfDay = `${date}T23:59:59.999Z`
 
-  const { data: articles } = await anonClient
+  const { data: dateArticles } = await anonClient
     .from('articles')
     .select('id, title, url, summaries(summary_text)')
     .gte('published_at', startOfDay)
@@ -57,9 +57,28 @@ export async function POST(request: NextRequest) {
     .order('published_at', { ascending: false })
     .limit(20) as { data: Array<{ id: string; title: string; url: string; summaries: Array<{ summary_text: string }> }> | null }
 
+  let articles = dateArticles
+  let fallbackUsed = false
+  let bestAvailableCount = dateArticles?.length ?? 0
+
+  if (!articles || articles.length < 3) {
+    const { data: fallbackArticles } = await anonClient
+      .from('articles')
+      .select('id, title, url, summaries(summary_text)')
+      .order('fetched_at', { ascending: false })
+      .limit(20) as { data: Array<{ id: string; title: string; url: string; summaries: Array<{ summary_text: string }> }> | null }
+
+    bestAvailableCount = Math.max(bestAvailableCount, fallbackArticles?.length ?? 0)
+
+    if (fallbackArticles && fallbackArticles.length >= 3) {
+      articles = fallbackArticles
+      fallbackUsed = true
+    }
+  }
+
   if (!articles || articles.length < 3) {
     return NextResponse.json(
-      { error: 'Not enough articles to build a digest (minimum 3)' },
+      { error: `Not enough articles to build a digest (found ${bestAvailableCount}, minimum 3)` },
       { status: 422 }
     )
   }
@@ -91,5 +110,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ digest })
+  return NextResponse.json({ digest, ...(fallbackUsed && { fallbackUsed: true }) })
 }
