@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const supabase = createAnonClient() as any
   const since = new Date(Date.now() - clampedHours * 60 * 60 * 1000).toISOString()
 
-  const { data: articles, error } = await supabase
+  const { data: dateArticles, error } = await supabase
     .from('articles')
     .select('title, category')
     .gte('published_at', since)
@@ -22,16 +22,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  let articles = dateArticles
+  let fallbackUsed = false
+  let bestAvailableCount = dateArticles?.length ?? 0
+
+  if (!articles || articles.length < 10) {
+    const { data: fallbackArticles } = await supabase
+      .from('articles')
+      .select('title, category')
+      .order('fetched_at', { ascending: false })
+      .limit(100) as { data: Array<{ title: string; category: string }> | null; error: Error | null }
+
+    bestAvailableCount = Math.max(bestAvailableCount, fallbackArticles?.length ?? 0)
+
+    if (fallbackArticles && fallbackArticles.length >= 10) {
+      articles = fallbackArticles
+      fallbackUsed = true
+    }
+  }
+
   if (!articles || articles.length < 10) {
     return NextResponse.json({
       trending_topics: [],
       keywords: [],
       analyzed_at: new Date().toISOString(),
-      message: 'Not enough articles for trend analysis',
+      message: `Not enough articles for trend analysis (found ${bestAvailableCount}, minimum 10)`,
     })
   }
 
   const trends = countTrends(articles)
 
-  return NextResponse.json({ ...trends, analyzed_at: new Date().toISOString() })
+  return NextResponse.json({ ...trends, analyzed_at: new Date().toISOString(), ...(fallbackUsed && { fallbackUsed: true }) })
 }

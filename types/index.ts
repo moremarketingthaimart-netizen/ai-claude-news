@@ -28,4 +28,6 @@ export interface TrendsData {
   trending_topics: TrendingTopic[]
   keywords: string[]
   analyzed_at: string
+  message?: string
+  fallbackUsed?: boolean
 }

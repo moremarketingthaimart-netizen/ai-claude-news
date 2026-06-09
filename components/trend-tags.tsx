@@ -40,7 +40,9 @@ export function TrendTags() {
 
   if (!trends || trends.trending_topics.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">ยังไม่มีข้อมูล trends — รอให้มีข่าวอย่างน้อย 10 บทความ</p>
+      <p className="text-sm text-muted-foreground">
+        {trends?.message || 'ยังไม่มีข้อมูล trends — รอให้มีข่าวอย่างน้อย 10 บทความ'}
+      </p>
     )
   }
 
